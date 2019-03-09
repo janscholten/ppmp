@@ -20,7 +20,7 @@ The main file is `ppmp.py`. If you've activated your environment, you may invoke
 ```
 python ppmp.py
 ``` 
-and it should output a csv (for the header, use the `--header` argument)
+and it should output a csv (batch mode: for the header, use the `--header` argument).
 By default, PPMP learns the `Pendulum-v0` problem using synthesised feedback. If you'd like to correct yourself, try
 ```
 python ppmp.py --algorithm ppmp_human
