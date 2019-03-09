@@ -12,7 +12,7 @@ The dependencies of this code are partially contained in the conda `ppmp_env.txt
 5. tensorflow
 6. box2d, box2d-kengz
 
-To quickly setup remote intances, we've used the `server_setup` file. It is not recommended to run this on your personal computer, but feel free to have a look at the installation procedures. 
+To quickly setup remote intances, we've used the `server_setup.sh` file. It is not recommended to run this on your personal computer, but feel free to have a look at the installation procedures. 
 
 ## Acknowledgement
 This algorithm was developed by Jan Scholten under the supervision of Jens Kober and Carlos Celemin. 
