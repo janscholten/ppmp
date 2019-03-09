@@ -4,6 +4,8 @@ This code was made for the study ['Deep Reinforcement Learning with Feedback-bas
 In this repository, PPMP is demonstrated in combination with DDPG, as in the paper.
 
 ## Getting Started
+### Setting up the environment
+We've tested this code using Ubuntu 18.10 (64 bit) and Python 3.6.
 The dependencies of this code are partially contained in the conda `ppmp_env.txt` environment file. In addition, you will need:
 1. gym
 2. tflearn
@@ -13,6 +15,17 @@ The dependencies of this code are partially contained in the conda `ppmp_env.txt
 6. box2d, box2d-kengz
 
 To quickly setup remote intances, we've used the `server_setup.sh` file. It is not recommended to run this on your personal computer, but feel free to have a look at the installation procedures. 
+### Running
+The main file is `ppmp.py`. If you've activated your environment, you may invoke it from the root directory in terminal by
+```python ppmp.py```
+By default, PPMP learns the `Pendulum-v0` problem using synthesised feedback. If you'd like to correct yourself, try
+```python ppmp.py --algorithm ppmp_human```.
+It should start rendering the environments, but the problem is paused at startup. Press spacebar first, and then the arrow keys to provide feedback. 
+
+Different environments are called with the `env` argument, e.g. `python ppmp.py --env MountainCarContinuous-v0`.
+For other arguments (hyperparameters, environment settings, ...), see `python ppmp.py --help` or open the code. 
+
+
 
 ## Acknowledgement
 This algorithm was developed by Jan Scholten under the supervision of Jens Kober and Carlos Celemin. 
