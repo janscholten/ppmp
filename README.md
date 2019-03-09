@@ -17,14 +17,25 @@ The dependencies of this code are partially contained in the conda `ppmp_env.txt
 To quickly setup remote intances, we've used the `server_setup.sh` file. It is not recommended to run this on your personal computer, but feel free to have a look at the installation procedures. 
 ### Running
 The main file is `ppmp.py`. If you've activated your environment, you may invoke it from the root directory in terminal by
-```python ppmp.py```
+```
+python ppmp.py
+``` 
+and it should output a csv (for the header, use the `--header` argument)
 By default, PPMP learns the `Pendulum-v0` problem using synthesised feedback. If you'd like to correct yourself, try
-```python ppmp.py --algorithm ppmp_human```.
+```
+python ppmp.py --algorithm ppmp_human
+```
 It should start rendering the environments, but the problem is paused at startup. Press spacebar first, and then the arrow keys to provide feedback. 
 
 Different environments are called with the `env` argument, e.g. `python ppmp.py --env MountainCarContinuous-v0`.
 For other arguments (hyperparameters, environment settings, ...), see `python ppmp.py --help` or open the code. 
 
+To record single runs, you may like to navigate to the testbench and call a script that saves the results for you:
+```
+cd single_analysis/pendulum
+./run_pendulum --heads 7
+```
+A live plot is then available in `live_view.pdf`.
 
 
 ## Acknowledgement
