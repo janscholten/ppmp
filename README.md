@@ -6,13 +6,13 @@ In this repository, PPMP is demonstrated in combination with DDPG, as in the pap
 ## Getting Started
 ### Setting up the environment
 We've tested this code using Ubuntu 18.10 (64 bit) and Python 3.6.
-The dependencies of this code are partially contained in the conda `ppmp_env.txt` environment file. In addition, you will need:
-1. gym
-2. tflearn
-3. pandas
-4. seaborn
-5. tensorflow
-6. box2d, box2d-kengz
+The most important dependencies of this code are gym, tflearn, seaborn and tensorflow. If you do not have these around yet, you may use conda+pip to quickly setup an appropriate environment by 
+```
+conda create --name ppmp tensorflow seaborn
+source activate ppmp
+pip install tflearn gym
+```
+and you should be ready. If not, the specific testing environment is reproduced with the `ppmp_env.txt` environment file.
 
 To quickly setup remote intances, we've used the `server_setup.sh` file. It is not recommended to run this on your personal computer, but feel free to have a look at the installation procedures. 
 ### Running
