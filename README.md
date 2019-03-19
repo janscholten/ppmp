@@ -46,3 +46,13 @@ We especially thank Daan Wout for countless fruitful discussions. We acknowledge
 You are free to use, share and adapt this work under the conditions stipulated in `LICENCE.md`. 
 
 ## Reference
+```
+@Misc{Scholten2019arXiv,
+  author = {Scholten, Jan and Wout, Daan and Celemin, Carlos and Kober, Jens},
+  title  = {Deep Reinforcement Learning with Feedback-based Exploration},
+  year   = {2019},
+  note   = {arXiv:1903.06151 [cs.LG]},
+  file   = {https://arxiv.org/pdf/1903.06151.pdf},
+  url    = {https://arxiv.org/abs/1903.06151},
+}
+```
