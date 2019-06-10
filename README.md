@@ -1,6 +1,6 @@
 # Predictive Probabilistic Merging of Policies
 Predictive Probabilistic Merging of Policies is a deep reinforcement learning framework where corrective feedback is used to improve sample efficiency. 
-This code was made for the study ['Deep Reinforcement Learning with Feedback-based Exploration'](https://arxiv.org/).
+This code was made for the study ['Deep Reinforcement Learning with Feedback-based Exploration'](https://arxiv.org/abs/1903.06151).
 In this repository, PPMP is demonstrated in combination with DDPG, as in the paper.
 
 ## Getting Started
