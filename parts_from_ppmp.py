@@ -1,10 +1,12 @@
 import tflearn
-import os, sys
+import os
+import sys
 import tensorflow as tf
 import numpy as np
 import random
 from pathlib import Path
 from parts_from_ddpg import ReplayBuffer
+
 
 class DefaultActor(object):
     """
@@ -20,7 +22,8 @@ class DefaultActor(object):
         self.s_dim = state_dim
         self.a_dim = action_dim
         self.action_bound = action_bound
-        self.variance = np.array([[1]]) # Only for default singlehead. TODO: make this a **kwars??
+        # Only for default singlehead. TODO: make this a **kwars??
+        self.variance = np.array([[1]])
         self.learning_rate = learning_rate
         self.tau = tau
         self.batch_size = batch_size
@@ -51,7 +54,8 @@ class DefaultActor(object):
         # Combine the gradients here
         self.unnormalized_actor_gradients = tf.gradients(
             self.scaled_out, self.network_params, -self.action_gradient)
-        self.actor_gradients = list(map(lambda x: tf.div(x, self.batch_size), self.unnormalized_actor_gradients))
+        self.actor_gradients = list(map(lambda x: tf.div(
+            x, self.batch_size), self.unnormalized_actor_gradients))
 
         # Optimization Op
         self.optimize = tf.train.AdamOptimizer(self.learning_rate).\
@@ -73,12 +77,14 @@ class DefaultActor(object):
         net = tflearn.layers.normalization.batch_normalization(net)
         net = tflearn.activations.relu(net)
         # Final layer weights default to Uniform[-3e-3, 3e-3]
-        w_init = tflearn.initializations.uniform(minval=-self.initial_variance, maxval=self.initial_variance)
+        w_init = tflearn.initializations.uniform(
+            minval=-self.initial_variance, maxval=self.initial_variance)
         out = tflearn.fully_connected(
             net, self.a_dim, activation='tanh', weights_init=w_init)
-        
+
         # Scale output to -action_bound to action_bound
-        num_heads = int(self.a_dim/len(self.action_bound[0].flatten())) # misleading because of init
+        # misleading because of init
+        num_heads = int(self.a_dim/len(self.action_bound[0].flatten()))
         bounds = np.tile(np.abs(self.action_bound).max(axis=0), num_heads)
         min = np.tile(self.action_bound[0], num_heads)
         max = np.tile(self.action_bound[1], num_heads)
@@ -122,19 +128,20 @@ class DefaultActor(object):
 
     def save(self, filename):
         tf.saved_model.simple_save(self.sess,
-                    "./oracles/"+filename,
-                    inputs={"state": self.inputs},
-                    outputs={"out": self.scaled_out})
+                                   "./oracles/"+filename,
+                                   inputs={"state": self.inputs},
+                                   outputs={"out": self.scaled_out})
         return
-
 
 
 class MultiHeadActor(DefaultActor):
     """Inherits fron ActorNetwork. Last layer is duplicated k times, so it will output k action suggestions. 
     There is a policy() method that outputs the mean action and std"""
+
     def __init__(self, sess, state_dim, action_dim, action_bound, learning_rate, tau, batch_size, initial_variance, k):
-        super().__init__(sess, state_dim, action_dim*k, action_bound, learning_rate, tau, batch_size, k, initial_variance)
-        
+        super().__init__(sess, state_dim, action_dim*k, action_bound,
+                         learning_rate, tau, batch_size, k, initial_variance)
+
         # Because base class beliefs a_dim = actual_a_dim*k:
         self.a_dim = action_dim
         self.k = k
@@ -151,8 +158,10 @@ class MultiHeadActor(DefaultActor):
         a = np.array(np.hsplit(self.predict_target(inputs), self.k))
         return a.mean(0)
 
+
 class MultiHeadActorTarget(MultiHeadActor):
     """Like MultiHeadActor (average action), but with the variance from the target network."""
+
     def policy(self, inputs):
         a = np.array(np.hsplit(self.predict(inputs), self.k))
         unscal = np.array(np.hsplit(self.sess.run(self.target_out, feed_dict={
@@ -165,8 +174,10 @@ class MultiHeadActorNoAverage(MultiHeadActor):
     """This Multihead actor outputs a policy that corresponds to a single head. 
     The actor.current_head value can be randomly set,
      e.g. every episode by calling actor.change_current_head()"""
+
     def __init__(self, sess, state_dim, action_dim, action_bound, learning_rate, tau, batch_size, initial_variance, k):
-        super().__init__(sess, state_dim, action_dim, action_bound, learning_rate, tau, batch_size, initial_variance, k)
+        super().__init__(sess, state_dim, action_dim, action_bound,
+                         learning_rate, tau, batch_size, initial_variance, k)
         self.current_head = 0
         self.change_current_head()
 
@@ -176,10 +187,10 @@ class MultiHeadActorNoAverage(MultiHeadActor):
         unscal = np.array(np.hsplit(self.sess.run(self.out, feed_dict={
             self.inputs: inputs
         }), self.k))
-        return scaled[self.current_head,:,:], np.array(np.cov(unscal.squeeze().T)).reshape(self.a_dim, -1)
+        return scaled[self.current_head, :, :], np.array(np.cov(unscal.squeeze().T)).reshape(self.a_dim, -1)
 
     def policy_target(self, inputs, j_batch):
-        return np.array(np.hsplit(self.predict_target(inputs), self.k))[j_batch ,range(inputs.shape[0]),:]
+        return np.array(np.hsplit(self.predict_target(inputs), self.k))[j_batch, range(inputs.shape[0]), :]
 
     def change_current_head(self):
         self.current_head = np.random.random_integers(self.k) - 1
@@ -187,15 +198,18 @@ class MultiHeadActorNoAverage(MultiHeadActor):
     def get_current_head(self):
         return self.current_head
 
+
 class KHeadActor(MultiHeadActorNoAverage):
     """Inherits from MultiHeadActorNoAverage but the variance estimates stem from the target network"""
+
     def policy(self, inputs):
         scaled = np.array(np.hsplit(self.predict(inputs), self.k))
         # TODO: more efficient if the tensor is just copied without a run?
         unscal = np.array(np.hsplit(self.sess.run(self.target_out, feed_dict={
             self.target_inputs: inputs
         }), self.k))
-        return np.array(scaled[self.current_head,:,:]), np.array(np.cov(unscal.squeeze().T)).reshape(self.a_dim, -1)
+        return np.array(scaled[self.current_head, :, :]), np.array(np.cov(unscal.squeeze().T)).reshape(self.a_dim, -1)
+
 
 class Predictor(object):
     """
@@ -222,12 +236,14 @@ class Predictor(object):
             self.network_params = tf.trainable_variables()
 
             # This gradient will be provided by the critic network
-            self.action_gradient = tf.placeholder(tf.float32, [None, self.a_dim])
+            self.action_gradient = tf.placeholder(
+                tf.float32, [None, self.a_dim])
 
             # Combine the gradients here
             self.unnormalized_actor_gradients = tf.gradients(
                 self.scaled_out, self.network_params, -self.action_gradient)
-            self.actor_gradients = list(map(lambda x: tf.div(x, self.batch_size), self.unnormalized_actor_gradients))
+            self.actor_gradients = list(map(lambda x: tf.div(
+                x, self.batch_size), self.unnormalized_actor_gradients))
 
             # Optimization Op
             self.optimize = tf.train.AdamOptimizer(self.learning_rate).\
@@ -267,7 +283,6 @@ class Predictor(object):
     def get_num_trainable_vars(self):
         return self.num_trainable_vars
 
-
     def __del__(self):
         self.sess.close()
 
@@ -275,7 +290,7 @@ class Predictor(object):
 class ActionBuffer(ReplayBuffer):
     def add(self, s, a):
         experience = (s, a)
-        if self.count < self.buffer_size: 
+        if self.count < self.buffer_size:
             self.buffer.append(experience)
             self.count += 1
         else:
@@ -295,15 +310,18 @@ class ActionBuffer(ReplayBuffer):
 
         return s_batch, a_batch
 
+
 class Selector(object):
     """Select an action, kalman style"""
+
     def __init__(self, scale, offset):
         self.scale = scale
         self.offset = offset
 
     def select(self, policy, policy_cov, feedback, feedback_cov):
-        C = np.eye(policy.shape[1]) # A mapping from feedback to action space 
-        gain = policy_cov@(C.T)@np.linalg.inv(C@policy_cov@(C.T) + feedback_cov)*self.scale + self.offset
+        C = np.eye(policy.shape[1])  # A mapping from feedback to action space
+        gain = policy_cov@(C.T)@np.linalg.inv(C@policy_cov@(
+            C.T) + feedback_cov)*self.scale + self.offset
         action = policy + feedback@gain.T
         # coviance = policy_cov - gain@C@policy_cov
         return action, gain

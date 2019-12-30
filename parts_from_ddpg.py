@@ -4,6 +4,7 @@ import numpy as np
 import tflearn
 import tensorflow as tf
 
+
 class ReplayBuffer(object):
 
     def __init__(self, buffer_size, random_seed=123):
@@ -17,7 +18,7 @@ class ReplayBuffer(object):
 
     def add(self, s, a, r, t, s2, j=0):
         experience = (s, a, r, t, s2, j)
-        if self.count < self.buffer_size: 
+        if self.count < self.buffer_size:
             self.buffer.append(experience)
             self.count += 1
         else:
@@ -48,6 +49,7 @@ class ReplayBuffer(object):
         self.buffer.clear()
         self.count = 0
 
+
 class Critic(object):
     """
     Input to the network is the state and action, output is Q(s,a).
@@ -71,13 +73,14 @@ class Critic(object):
         # Target Network
         self.target_inputs, self.target_action, self.target_out = self.create_critic_network()
 
-        self.target_network_params = tf.trainable_variables()[(len(self.network_params) + num_actor_vars):]
+        self.target_network_params = tf.trainable_variables(
+        )[(len(self.network_params) + num_actor_vars):]
 
         # Op for periodically updating target network with online network
         # weights with regularization
         self.update_target_network_params = \
-            [self.target_network_params[i].assign(tf.multiply(self.network_params[i], self.tau) \
-            + tf.multiply(self.target_network_params[i], 1. - self.tau))
+            [self.target_network_params[i].assign(tf.multiply(self.network_params[i], self.tau)
+                                                  + tf.multiply(self.target_network_params[i], 1. - self.tau))
                 for i in range(len(self.target_network_params))]
 
         # Network target (y_i)
@@ -146,6 +149,8 @@ class Critic(object):
 
 # Taken from https://github.com/openai/baselines/blob/master/baselines/ddpg/noise.py, which is
 # based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
+
+
 class OUNoise:
     def __init__(self, mu, sigma=0.3, theta=.15, dt=1e-2, x0=None):
         self.theta = theta
@@ -157,12 +162,14 @@ class OUNoise:
 
     def __call__(self):
         x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + \
-                self.sigma * np.sqrt(self.dt) * np.random.normal(size=self.mu.shape)
+            self.sigma * np.sqrt(self.dt) * \
+            np.random.normal(size=self.mu.shape)
         self.x_prev = x
         return x
 
     def reset(self):
-        self.x_prev = self.x0 if self.x0 is not None else np.zeros_like(self.mu)
+        self.x_prev = self.x0 if self.x0 is not None else np.zeros_like(
+            self.mu)
 
     def __repr__(self):
         return 'OrnsteinUhlenbeckActionNoise(mu={}, sigma={})'.format(self.mu, self.sigma)
