@@ -12,7 +12,7 @@ import gym.spaces
 from parts_from_ddpg import Critic, ReplayBuffer, OUNoise
 from parts_from_ppmp import KHeadActor, Predictor, Selector, ActionBuffer
 from oracles import Oracle
-from utils import get_ppmp_argparser
+from arguments import get_ppmp_argparser
 
 # Suppress tf and gym datatype warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -27,24 +27,24 @@ def key_press(key, mod):
     if key == 32:
         human_sets_pause = not human_sets_pause
     if key == 65361:
-        a = -1  # left
+        a_keypress = -1  # left
     elif key == 65363:
-        a = 1  # right
+        a_keypress = 1  # right
     else:
-        a = 0
+        a_keypress = 0
         return
-    correction = np.array([[a]])
+    correction = np.array([[a_keypress]])
 
 
 def key_release(key, mod):
     global correction
     if key == 65361:
-        a = -1  # left
+        a_keypress = -1  # left
     elif key == 65363:
-        a = 1  # right
+        a_keypress = 1  # right
     else:
         return
-    if correction == a:
+    if correction == a_keypress:
         correction = np.array([[0]])
 
 
@@ -105,18 +105,17 @@ def train(
             ap += ou_noise()
 
             # Scheduling actions:
-            
-            # Predictor in standby
+            # Predictor not yet active
             if replay_buffer.size() < start_predictor_training+predictor_buffer.size():
                 policy = ap
+            # There is no predictor
             elif args['algorithm'] == 'pmp':
                 policy = ap
-
-            # Predictor active
+            # Predictor always active
             elif (replay_buffer.size() < start_q_filter):
                 policy = predictor.predict(np.reshape(state, (1, actor.s_dim))) + \
                     predictor_noise*(np.random.random((1, actor.a_dim))-0.5)
-            else:  # Q-filter is active
+            else:  # Q-filter stage (either predictor or actor)
                 ac_hat = predictor.predict(np.reshape(state, (1, actor.s_dim))) + \
                     predictor_noise*(np.random.random((1, actor.a_dim))-0.5)
                 predicted_better = critic.predict(np.reshape(state, (1, actor.s_dim)), ac_hat) > \
@@ -130,10 +129,13 @@ def train(
                 if args['env'] == 'Pendulum-v0':  # Flipping controls 
                     time.sleep(max(0, 0.05 - time.time() + timestamp))
                     timestamp = time.time()
-                    correction = -correction
-
-                a, gain = selector.select(
-                    policy, policy_var, correction, correction_cov)
+                    a, gain = selector.select(
+                        policy, policy_var, -correction, correction_cov)
+                    if correction:
+                        print(correction)
+                else:
+                    a, gain = selector.select(
+                        policy, policy_var, correction, correction_cov)
                 predictor_buffer.add(np.reshape(
                     state, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)))
             else:  # use oracle
@@ -153,7 +155,7 @@ def train(
                     _, gain = selector.select(
                         policy, policy_var, correction, correction_cov)
 
-            # The oracle : oracle.predict(
+            # Pure oracle actions : oracle.predict(
             #   np.reshape(state, (1, env.observation_space.shape[0])))
             a = np.clip(a, env.action_space.low, env.action_space.high)
 
@@ -208,7 +210,7 @@ def train(
                 break
         fbtot = np.count_nonzero(fb_buffer)/fb_buffer.shape[1]/(j+1)
         print(csvformatter.format(args['env'], args['random_seed'],
-                                  'PPMP',
+                                  args['algorithm'].upper(),
                                   args['error'],
                                   i,
                                   str(int(ep_reward)),
